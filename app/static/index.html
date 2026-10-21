@@ -33,9 +33,9 @@
         <div class="form-row">
           <label>Source
             <select id="ing-source">
-              <option value="random">Random generated articles</option>
-              <option value="text">My own texts (paste or upload)</option>
-              <option value="sample">Built-in example set</option>
+              <option value="random">Random articles</option>
+              <option value="text">My own texts</option>
+              <option value="sample">Built-in examples</option>
               <option value="mediacloud">Media Cloud API</option>
             </select>
           </label>
@@ -45,36 +45,33 @@
         </div>
         <div data-for="random" class="form-row">
           <label>Articles <input id="ing-n" type="number" value="60" min="5" max="5000"></label>
-          <label>Spread over days <input id="ing-days-r" type="number" value="30" min="1" max="365"></label>
-          <label>Seed (optional) <input id="ing-seed" type="number" placeholder="random"></label>
+          <label title="Spread the generated events over this many days">Days <input id="ing-days-r" type="number" value="30" min="1" max="365"></label>
+          <label title="Optional: the same seed gives the same articles again">Seed <input id="ing-seed" type="number" placeholder="random"></label>
         </div>
-        <div data-for="text" hidden>
-          <label class="wide">Texts: one article per block, separated by a line with only ---
-            <textarea id="ing-text" rows="8" placeholder="Floods in Sunamganj&#10;Heavy rain flooded Sunamganj district in Sylhet. About 20,000 people moved to shelters.&#10;---&#10;Clashes near El Fasher&#10;At least 12 people were killed in fighting near El Fasher, North Darfur."></textarea>
-          </label>
-          <label class="wide">Or upload a file (.txt, .jsonl, .json, .csv with a text column)
-            <input id="ing-file" type="file" accept=".txt,.jsonl,.json,.csv,text/plain">
-          </label>
+        <div data-for="text" class="texts-row" hidden>
+          <button type="button" id="btn-texts" aria-haspopup="dialog">Paste or upload texts…</button>
+          <span id="texts-status" class="note" aria-live="polite">Nothing added yet</span>
         </div>
         <div data-for="mediacloud" hidden>
-          <div class="form-row">
-            <label>Days back <input id="ing-days" type="number" value="3" min="1" max="90"></label>
-            <label>Max articles <input id="ing-max" type="number" value="300" min="10" max="5000"></label>
+          <div class="inline-row">
+            <label class="inline">Days back <input id="ing-days" type="number" value="3" min="1" max="90"></label>
+            <label class="inline">Max articles <input id="ing-max" type="number" value="300" min="10" max="5000"></label>
           </div>
-          <label class="wide">Query (blank = ontology keywords)
-            <input id="ing-query" placeholder='e.g. flood OR displaced OR cholera'>
+          <label class="inline" title="Leave blank to search with the ontology keywords">Query
+            <input id="ing-query" placeholder="blank = ontology keywords" aria-describedby="mc-note">
           </label>
-          <p class="hint">Full article text needs a Media Cloud account with text access; without it only titles are used.</p>
+          <p class="note" id="mc-note" title="Full article text needs a Media Cloud account with text access; without it only titles are used.">Without full-text access only titles are used</p>
         </div>
         <button class="primary" id="btn-ingest">Fetch and structure</button>
       </div>
     </div>
+    <div class="step-gap" aria-hidden="true"></div>
     <div class="step">
       <span class="num">2</span>
       <div class="step-body">
         <h2>Structure on the Spark</h2>
-        <p class="hint">Keyword filter, ontology-guided extraction with the local LLM, then event clustering.</p>
-        <label class="hint" title="For one run, clusters = clusters containing that run's mentions; clustering itself spans all runs.">Show counts for <select id="stats-run"><option value="">all runs</option></select></label>
+        <p class="note" title="Keyword filter, ontology-guided extraction with the local LLM, then event clustering.">Keyword filter, LLM extraction, event clustering.</p>
+        <label class="inline" title="For one run, clusters = clusters containing that run's mentions; clustering itself spans all runs.">Show counts for <select id="stats-run"><option value="">all runs</option></select></label>
         <div id="pipe-stats" class="figures"></div>
         <div class="row-actions">
           <button id="btn-pipeline">Re-run pipeline</button>
@@ -83,17 +80,20 @@
         <p id="job-cdkg" class="job" aria-live="polite"></p>
       </div>
     </div>
+    <div class="step-gap" aria-hidden="true"></div>
     <div class="step">
       <span class="num">3</span>
       <div class="step-body">
         <h2>Query the record</h2>
-        <label class="wide">Canonical query
+        <label class="inline">Canonical query
           <select id="q-name"><option value="">All event clusters</option></select>
         </label>
-        <label class="wide">Country
-          <select id="q-country"><option value="">Any</option></select>
-        </label>
-        <a class="small" href="/docs" target="_blank" rel="noopener">Open API docs</a>
+        <div class="query-row">
+          <label class="inline">Country
+            <select id="q-country"><option value="">Any</option></select>
+          </label>
+          <a class="small" href="/docs" target="_blank" rel="noopener">Open API docs</a>
+        </div>
       </div>
     </div>
   </section>
@@ -113,6 +113,26 @@
     <div id="detail-body" class="drawer-body"></div>
   </aside>
 </main>
+
+<dialog id="texts-dialog" class="texts-dialog" aria-labelledby="texts-title">
+  <div class="drawer-head">
+    <h2 id="texts-title">Your own texts</h2>
+    <button type="button" class="drawer-close" id="texts-close" aria-label="Close">×</button>
+  </div>
+  <div class="texts-body">
+    <label class="wide">Texts: one article per block, separated by a line with only ---
+      <textarea id="ing-text" rows="10" placeholder="Floods in Sunamganj&#10;Heavy rain flooded Sunamganj district in Sylhet. About 20,000 people moved to shelters.&#10;---&#10;Clashes near El Fasher&#10;At least 12 people were killed in fighting near El Fasher, North Darfur."></textarea>
+    </label>
+    <label class="wide">Or upload a file (.txt, .jsonl, .json, .csv with a text column)
+      <input id="ing-file" type="file" accept=".txt,.jsonl,.json,.csv,text/plain">
+    </label>
+    <p class="hint">A file takes precedence over pasted text. Titles: a short first line in a block is used as the title.</p>
+    <div class="row-actions">
+      <button type="button" class="primary" id="texts-done">Done</button>
+      <button type="button" class="ghost" id="texts-clear">Clear</button>
+    </div>
+  </div>
+</dialog>
 
 <!-- ========================= Task 2 ========================= -->
 <main id="tab-review" class="tab" hidden>

@@ -80,6 +80,51 @@ button.ghost { background: transparent; }
 .job { font-size: .85rem; color: var(--muted); min-height: 1.3em; }
 .job.err { color: var(--remove); }
 
+/* ---------- task 1: pipeline panel (fits a 1366x768 laptop without scrolling) ----------
+   spacing hierarchy: label->field ~4px, between fields and under step titles 12px,
+   between steps clamp(1.5rem, 4vh, 3rem), growing into leftover height up to 5rem */
+#tab-cdkg { padding-top: 1rem; }
+.rail { display: flex; flex-direction: column; --step-gap: clamp(1.5rem, 4vh, 3rem); }
+.rail > .step { flex: none; padding-bottom: 0; }
+.rail .step-body { min-width: 0; }   /* lets one-line texts truncate instead of widening the panel */
+.rail .step:not(:last-child)::after { bottom: 0; }
+.step-gap { flex: 1 1 var(--step-gap); min-height: var(--step-gap); max-height: 5rem; position: relative; }
+.step-gap::before { content: ""; position: absolute; left: calc(1rem - 1px); top: 0; bottom: 0; width: 2px; background: var(--line); }
+.rail .step h2 { margin: .3rem 0 .8rem; }
+.rail .small { font-size: .87rem; }
+.rail label { font-size: .87rem; gap: .3rem; }
+.rail label.wide { margin: .8rem 0 0; }
+.rail input, .rail select { min-height: 2.4rem; padding: .35rem .55rem; font-size: .93rem; }
+.rail button { min-height: 2.4rem; padding: .4rem .9rem; font-size: .93rem; }
+.rail .form-row { grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); gap: .8rem; }
+.rail .form-row.two { grid-template-columns: repeat(2, 1fr); }
+.rail [data-for] { margin-top: .8rem; }
+.rail .step-body > button { margin-top: .8rem; }
+.rail .note, .rail .job { font-size: .87rem; color: var(--muted); margin: .4rem 0 0;
+                          white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rail .job.err { color: var(--remove); }
+.rail label.inline { flex-direction: row; align-items: center; gap: .5rem; margin: .8rem 0 0; white-space: nowrap; }
+.rail label.inline select, .rail label.inline input { width: auto; flex: 1; min-width: 0; }
+.rail .inline-row { display: flex; gap: .8rem; }
+.rail .inline-row label.inline { flex: 1; min-width: 0; margin-top: 0; }
+.rail .figures { display: grid; grid-template-columns: repeat(4, auto); justify-content: space-between; gap: .5rem; margin: .8rem 0; }
+.rail .fig span { font-size: .87rem; white-space: nowrap; }
+.texts-row { display: flex; align-items: center; gap: .8rem; }
+.texts-row[hidden] { display: none; }
+.texts-row .note { flex: 1; min-width: 0; margin: 0; }
+.query-row { display: flex; align-items: center; gap: .8rem; margin-top: .8rem; }
+.query-row label { flex: 1; min-width: 0; }
+.rail .query-row label.inline { margin-top: 0; }
+.query-row .small { white-space: nowrap; }
+
+/* "my own texts" dialog */
+.texts-dialog { width: min(40rem, calc(100vw - 2rem)); max-height: calc(100vh - 2rem); max-height: calc(100dvh - 2rem); padding: 0;
+                border: 1px solid var(--line); border-radius: var(--radius-m); background: var(--surface); color: var(--ink);
+                box-shadow: 0 12px 32px rgba(24, 35, 46, .2); }
+.texts-dialog::backdrop { background: rgba(24, 35, 46, .45); }
+.texts-body { padding: .9rem 1.2rem 1.2rem; }
+.texts-body .hint { margin: .2rem 0 .8rem; }
+
 /* ---------- task 1: results ---------- */
 .results { min-width: 0; }
 .results-head { display: flex; align-items: baseline; gap: .75rem; margin-bottom: .6rem; }

@@ -54,8 +54,8 @@ async function loadStats() {
   $("#stats-run").innerHTML = `<option value="">all runs</option>` + s.runs.map((r) =>
     `<option value="${r.id}" ${String(r.id) === run ? "selected" : ""}>run ${r.id}: ${esc(r.source)}, ${esc(r.started_at)}</option>`).join("");
   $("#pipe-stats").innerHTML = [
-    [s.articles, "articles stored"], [s.filter_passed, "passed filter"],
-    [s.mentions, "event mentions"], [s.clusters, "event clusters"],
+    [s.articles, "articles"], [s.filter_passed, "passed filter"],
+    [s.mentions, "mentions"], [s.clusters, "clusters"],
   ].map(([n, t]) => `<div class="fig"><b>${n}</b><span>${t}</span></div>`).join("");
   const sel = $("#q-country"), cur = sel.value;
   sel.innerHTML = `<option value="">Any</option>` + s.countries.map((c) => `<option ${c === cur ? "selected" : ""}>${esc(c)}</option>`).join("");
@@ -207,19 +207,25 @@ document.addEventListener("keydown", (e) => {
   if (next) showDetail(next, { focusRow: e.target.matches?.("#res-table tr[data-id]") });
 });
 
+function jobMsg(text, err = false) {   // one line in the panel; the full text is in the tooltip
+  const el = $("#job-cdkg");
+  el.textContent = text;
+  el.title = text;
+  el.classList.toggle("err", err);
+}
+
 async function pollCdkg() {
   const j = await api("/api/cdkg/job");
-  const el = $("#job-cdkg");
-  el.classList.toggle("err", !!j.error || !!j.result?.extract?.errors);
-  if (j.running) { el.textContent = `Working: ${j.step}…`; setTimeout(pollCdkg, 1500); }
-  else if (j.error) el.textContent = `Stopped: ${j.error}`;
+  const err = !!j.error || !!j.result?.extract?.errors;
+  if (j.running) { jobMsg(`Working: ${j.step}…`, err); setTimeout(pollCdkg, 1500); }
+  else if (j.error) jobMsg(`Stopped: ${j.error}`, err);
   else if (j.result) {
     const r = j.result;
-    el.textContent = [r.ingest && `Loaded ${r.ingest.fetched} (${r.ingest.new_articles} new)`,
+    jobMsg([r.ingest && `Loaded ${r.ingest.fetched} (${r.ingest.new_articles} new)`,
       r.filter && `filter kept ${r.filter.passed}, dropped ${r.filter.dropped}`,
       r.extract && `extracted ${r.extract.event_mentions} mentions with ${r.extract.model_versions.join(", ") || "no model"}`,
       r.extract?.errors && `${r.extract.errors} article(s) failed${r.extract.stopped ? `, ${r.extract.stopped}` : ""}`,
-      r.cluster && `${r.cluster.clusters} clusters`].filter(Boolean).join("; ");
+      r.cluster && `${r.cluster.clusters} clusters`].filter(Boolean).join("; "), err);
   }
   $$("#btn-ingest, #btn-pipeline").forEach((b) => (b.disabled = j.running));
   if (!j.running) { await loadStats(); await loadResults(); }
@@ -234,6 +240,27 @@ function syncSourceFields() {
 $("#ing-source").addEventListener("change", syncSourceFields);
 syncSourceFields();
 
+/* ---------------- "my own texts" dialog ---------------- */
+function textsStatus() {
+  const f = $("#ing-file").files[0], t = $("#ing-text").value.trim();
+  let msg = "Nothing added yet";
+  if (f) msg = `File: ${f.name}`;
+  else if (t) {
+    let blocks = t.split(/^\s*---\s*$/m);
+    if (blocks.length === 1) blocks = t.split(/\n\s*\n/);
+    const n = blocks.filter((b) => b.trim()).length;
+    msg = `${n} pasted text${n === 1 ? "" : "s"}`;
+  }
+  $("#texts-status").textContent = msg;
+  $("#texts-status").title = msg;
+}
+$("#btn-texts").addEventListener("click", () => { $("#texts-dialog").showModal(); $("#ing-text").focus(); });
+$("#texts-dialog").addEventListener("close", () => { textsStatus(); $("#btn-texts").focus(); });
+$("#texts-dialog").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });   // backdrop
+$("#texts-close").addEventListener("click", () => $("#texts-dialog").close());
+$("#texts-done").addEventListener("click", () => $("#texts-dialog").close());
+$("#texts-clear").addEventListener("click", () => { $("#ing-text").value = ""; $("#ing-file").value = ""; $("#ing-text").focus(); });
+
 async function readUpload() {
   const f = $("#ing-file").files[0];
   if (!f) return null;
@@ -242,8 +269,7 @@ async function readUpload() {
 }
 
 $("#btn-ingest").addEventListener("click", async () => {
-  const el = $("#job-cdkg");
-  el.classList.remove("err");
+  jobMsg("");
   try {
     const src = $("#ing-source").value, country = $("#ing-country").value || null;
     const body = { source: src, country };
@@ -253,19 +279,19 @@ $("#btn-ingest").addEventListener("click", async () => {
     } else if (src === "text") {
       const up = await readUpload();
       Object.assign(body, up || { text: $("#ing-text").value, filename: "pasted.txt" });
-      if (!body.text.trim()) throw new Error("Paste some text or choose a file first.");
+      if (!body.text.trim()) throw new Error("Add texts first: Paste or upload texts…");
     } else if (src === "mediacloud") {
       Object.assign(body, { days: +$("#ing-days").value, max_stories: +$("#ing-max").value,
         query: $("#ing-query").value.trim() || null });
     }
     await post("/api/cdkg/ingest", body);
     pollCdkg();
-  } catch (e) { el.textContent = e.message; el.classList.add("err"); }
+  } catch (e) { jobMsg(e.message, true); }
 });
 $("#btn-pipeline").addEventListener("click", async () => { try { await post("/api/cdkg/pipeline"); pollCdkg(); } catch (e) { alert(e.message); } });
 $("#btn-reset-cdkg").addEventListener("click", async () => {
   if (!confirm("Delete all stored articles, mentions and clusters on this machine? Raw JSONL files stay in data/raw.")) return;
-  await post("/api/cdkg/reset"); $("#job-cdkg").textContent = "Cleared."; await loadStats(); await loadResults();
+  await post("/api/cdkg/reset"); jobMsg("Cleared."); await loadStats(); await loadResults();
 });
 $("#stats-run").addEventListener("change", loadStats);
 $("#q-name").addEventListener("change", loadResults);

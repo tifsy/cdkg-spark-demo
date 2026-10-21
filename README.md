@@ -58,9 +58,9 @@ Full Media Cloud text access is not needed for the demo. Step 1 of the **Event r
 
 | Source | Use it for |
 |---|---|
-| **Random generated articles** (default) | Quick, realistic-looking volume. Fake events in Sudan and Bangladesh, each "reported" by 1–3 fake outlets with slightly different numbers, plus ~20% irrelevant stories. Set a **seed** to get the same articles again. |
-| **My own texts** | Paste text or upload a file. Any text works, including random sentences. Text with no crisis content is simply dropped by the filter, and the filter log shows why. |
-| **Built-in example set** | 13 hand-written example articles, including an Arabic one. |
+| **Random articles** (default) | Quick, realistic-looking volume. Fake events in Sudan and Bangladesh, each "reported" by 1–3 fake outlets with slightly different numbers, plus ~20% irrelevant stories. Set a **seed** to get the same articles again. |
+| **My own texts** | Click **Paste or upload texts…**, then paste text or choose a file. Any text works, including random sentences. Text with no crisis content is simply dropped by the filter, and the filter log shows why. |
+| **Built-in examples** | 13 hand-written example articles, including an Arabic one. |
 | **Media Cloud API** | Real data, once you have access (section 5). |
 
 ### Formats for your own texts
