@@ -1,0 +1,6 @@
+# Example crontab for the Spark (crontab -e). Daily update, proposal KPI A3.
+# 05:30 pull yesterday's articles for each reference country and run the pipeline
+30 5 * * * cd $HOME/cdkg-spark-demo && .venv/bin/python -m app.cli ingest --country Sudan --days 1 >> data/cron.log 2>&1
+45 5 * * * cd $HOME/cdkg-spark-demo && .venv/bin/python -m app.cli ingest --country Bangladesh --days 1 >> data/cron.log 2>&1
+# 06:30 AI pre-review of a collection queue (humans still confirm in the UI)
+# 30 6 * * 1 cd $HOME/cdkg-spark-demo && .venv/bin/python -m app.cli review --queue <QUEUE_GUID> >> data/cron.log 2>&1
