@@ -14,6 +14,9 @@ Two ways to feed the pipeline:
    from the ontology and gazetteer. Each fake event is "reported" by 1-3 fake
    outlets with slightly different numbers, plus some irrelevant articles, so
    filtering, extraction and clustering all have something to do.
+   Each generated story carries a hidden `true_event_id` (null for irrelevant
+   stories). It is written to the raw JSONL only, never to the articles table,
+   so `python -m app.cli score` can grade clustering without the pipeline seeing it.
 
 Everything produced here is shaped like a Media Cloud story, so the rest of the
 pipeline is unchanged when real data arrives.
@@ -148,13 +151,16 @@ def generate_random(n: int = 60, countries: list[str] | None = None, days: int =
     countries = [c for c in (countries or list(GAZETTEER)) if c in GAZETTEER] or list(GAZETTEER)
     today = dt.date.today()
     stories: list[dict] = []
+    n_events = 0
     while len(stories) < n:
         country = rng.choice(countries)
         if rng.random() < irrelevant_share:
             title, text = rng.choice(IRRELEVANT)
             stories.append(_story(text, title, rng.choice(OUTLETS[country]),
-                                  (today - dt.timedelta(days=rng.randint(0, days))).isoformat(), country, "en"))
+                                  (today - dt.timedelta(days=rng.randint(0, days))).isoformat(), country, "en")
+                           | {"true_event_id": None})
             continue
+        n_events += 1
         etype = rng.choice(list(TEMPLATES))
         a1 = rng.choice(list(GAZETTEER[country]))
         a2 = rng.choice(GAZETTEER[country][a1])
@@ -169,5 +175,6 @@ def generate_random(n: int = 60, countries: list[str] | None = None, days: int =
             nums = {k: f"{_jitter(v, rng):,}" for k, v in base.items()}
             report_day = event_day + dt.timedelta(days=rng.randint(0, 1))
             stories.append(_story(body.format(a1=a1, a2=a2, actor=actor, **nums), title.format(a2=a2),
-                                  outlet, min(report_day, today).isoformat(), country, "en"))
+                                  outlet, min(report_day, today).isoformat(), country, "en")
+                           | {"true_event_id": f"gen-{n_events}"})
     return stories[:n]

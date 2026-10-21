@@ -6,12 +6,13 @@
   python -m app.cli ingest --country Sudan --days 1
   python -m app.cli pipeline
   python -m app.cli query flash_triage --country Sudan
+  python -m app.cli score [--run 3]                # clustering vs the generator's ground truth
   python -m app.cli review --queue <queue_guid>    # AI pre-review only; humans confirm in the UI
 """
 import argparse
 import json
 
-from .cdkg import ingest, pipeline, queries
+from .cdkg import evaluate, ingest, pipeline, queries
 from .db import init_db
 from .review import agent
 
@@ -39,6 +40,8 @@ def main():
     q = sub.add_parser("query")
     q.add_argument("name", choices=list(queries.CANONICAL))
     q.add_argument("--country", required=True)
+    s = sub.add_parser("score")
+    s.add_argument("--run", type=int, help="ingest run id, default: latest random-generator run")
     r = sub.add_parser("review")
     r.add_argument("--queue", required=True)
     r.add_argument("--limit", type=int, default=200)
@@ -64,6 +67,8 @@ def main():
         out = pipeline.run_all()
     elif a.cmd == "query":
         out = queries.CANONICAL[a.name][1](a.country)
+    elif a.cmd == "score":
+        out = evaluate.score(a.run)
     else:
         agent.run_queue(a.queue, a.limit, a.redo)
         out = {"job": agent.JOB, "metrics": agent.metrics(a.queue)}

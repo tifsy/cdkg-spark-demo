@@ -144,7 +144,7 @@ Allowed sector values: {", ".join(SECTORS)}
 Return JSON: {{"events": [ {{
   "event_type": one of the allowed values,
   "sector": one of the allowed sectors,
-  "event_start": "YYYY-MM-DD" or null (when the event happened, NOT the report date),
+  "event_start": "YYYY-MM-DD" or null (when the event happened; null unless the article gives a date or a specific day),
   "event_end": "YYYY-MM-DD" or null,
   "country": country name,
   "location_text": most specific place named in the article,
@@ -153,7 +153,7 @@ Return JSON: {{"events": [ {{
   "population_group": e.g. "IDPs", "children", "civilians", or null,
   "killed": integer or null, "injured": integer or null,
   "displaced": integer or null, "affected": integer or null,
-  "actors": list of party/organisation categories as reported (never individual people's names),
+  "actors": list of parties to the event as reported, e.g. "an armed group" (never victims, aid workers, reporters, hazards or individual people's names),
   "summary": one neutral sentence in English written in your own words,
   "confidence": number 0-1 that this event is real and correctly typed
 }} ]}}"""

@@ -31,10 +31,16 @@ UNDP, Media Cloud; IGAIP 2026 proposal dated 30 April 2026). It runs on an **NVI
 
 ## Design decisions to preserve
 - Article full text never leaves the Spark through the API (`HIDE_FULLTEXT`, proposal §3.5).
-- No individual names extracted; actors are "as reported"; protection events are flagged
+- No individual names extracted; actors are "as reported" and only parties to the event (not
+  victims, aid workers, sources or hazards); protection events are flagged
   `sensitive` and their location text/actors are withheld in the API (§5.10).
 - Conflicting figures are kept as ranges, never averaged (§3.8). QA flags: single_source,
-  contradiction_*, temporal_span_gt_7d, uncertain_coreference.
+  contradiction_*, temporal_span_gt_7d, uncertain_coreference, event_date_gt_30d_before_report
+  (late reporting is kept, not dropped: event time and report time are separate).
+- event_start/event_end only when the article gives a date or a specific day; dates after the
+  publish date or unparseable are dropped in `_normalise`.
+- LLM mentions are labelled `<provider>:<model>+<PROMPT_VERSION>`; bump `PROMPT_VERSION` in
+  pipeline.py when the prompt changes. Older rows without the suffix stay valid.
 - Raw input of every run is kept untouched in `data/raw/<date>/*.jsonl` for replay.
 - Task 2: the AI never calls `decide`. Suggestions are stored with status `pending`; only
   `agent.confirm()` (human) pushes. Confidence < `REVIEW_MIN_CONFIDENCE` (0.70) → proposed skip.
@@ -59,12 +65,16 @@ examples/             sample input files; scripts/ setup, run, tailscale_serve, 
 
 ## How to verify changes
 ```bash
-./scripts/smoke_test.sh                      # offline end-to-end, both tasks (uses temp DATA_DIR)
+./scripts/smoke_test.sh                      # offline end-to-end, both tasks (uses temp DATA_DIR; Linux or Windows venv)
 LLM_PROVIDER=mock python -m uvicorn app.main:app --port 8080   # then open the UI
+python -m app.cli generate --n 30 --seed 42 && python -m app.cli score   # pairwise clustering P/R
 ```
+The generator writes a hidden `true_event_id` into the raw JSONL only; `score` reads it from there.
 Verified so far: smoke test from a fresh unzip; browser click-through with no JS errors;
 Task 2 end-to-end against a **real local collection-review-tool backend** (seeded queue,
 decisions + removal_reason/skip_note written); LLM path against a stub OpenAI-compatible server.
+Pipeline counts in the UI default to the whole DB; pick a run to see that run's counts
+(clustering itself always spans all runs).
 **Not yet verified:** a real LLM on the Spark, the live Media Cloud API, live crawling of real sites.
 
 ## Known limitations / possible next steps
