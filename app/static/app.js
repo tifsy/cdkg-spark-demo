@@ -70,7 +70,7 @@ async function loadQueries() {
 function range(v) { return v ? esc(v) : `<span class="muted">–</span>`; }
 function clusterTable(list) {
   if (!list.length) return `<tr><td class="empty">No event clusters match. Fetch articles in step 1, or choose a different query.</td></tr>`;
-  return `<thead><tr><th>Event</th><th>Place</th><th>Dates</th><th>Sources</th><th>Deaths</th><th>Displaced</th><th>Affected</th><th>Confidence</th><th>Checks</th></tr></thead><tbody>` +
+  return `<thead><tr><th>Event</th><th>Location</th><th>Dates</th><th>Sources</th><th>Deaths</th><th>Displaced</th><th>Affected</th><th>Confidence</th><th>Checks</th></tr></thead><tbody>` +
     list.map((e) => `<tr data-id="${esc(e.id)}" tabindex="0">
       <td><span class="type">${esc(lbl(e.event_type))}</span><br><span class="muted">${esc(lbl(e.sector))}</span></td>
       <td>${esc(e.admin2 || e.admin1 || "")}<br><span class="muted">${esc([e.admin2 ? e.admin1 : null, e.country].filter(Boolean).join(", "))}</span></td>
