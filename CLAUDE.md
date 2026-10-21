@@ -75,3 +75,16 @@ decisions + removal_reason/skip_note written); LLM path against a stub OpenAI-co
 - Ideas: run with the real LLM on the Spark and compare against heuristics; add an evaluation
   page (hand-label ~50 events, precision/recall); concurrent LLM requests; Neo4j export;
   wire Media Cloud once access arrives.
+
+## Commit messages
+Use Conventional Commits: `<type>(<scope>): <summary>`
+- type: feat, fix, docs, refactor, test, chore, style, perf
+- scope (optional): extraction, pipeline, clustering, ingest, ui, review, api, scripts
+- summary: imperative, lower case, no trailing period, max ~72 characters
+- body (optional, after a blank line): why the change was made, not what
+- breaking changes: add `!` after the type and explain in the body
+- one logical change per commit; don't mix a fix and a feature
+Examples:
+  fix(extraction): stop inventing event_start from vague dates
+  feat(ui): show cluster detail in a side drawer
+  docs: add commit message conventions
