@@ -49,7 +49,10 @@ $$(".tabs button").forEach((b) => b.addEventListener("click", () => {
 
 /* ================= Task 1 ================= */
 async function loadStats() {
-  const s = await api("/api/cdkg/stats");
+  const run = $("#stats-run").value;
+  const s = await api(`/api/cdkg/stats${run ? `?run_id=${encodeURIComponent(run)}` : ""}`);
+  $("#stats-run").innerHTML = `<option value="">all runs</option>` + s.runs.map((r) =>
+    `<option value="${r.id}" ${String(r.id) === run ? "selected" : ""}>run ${r.id}: ${esc(r.source)}, ${esc(r.started_at)}</option>`).join("");
   $("#pipe-stats").innerHTML = [
     [s.articles, "articles stored"], [s.filter_passed, "passed filter"],
     [s.mentions, "event mentions"], [s.clusters, "event clusters"],
@@ -187,6 +190,7 @@ $("#btn-reset-cdkg").addEventListener("click", async () => {
   if (!confirm("Delete all stored articles, mentions and clusters on this machine? Raw JSONL files stay in data/raw.")) return;
   await post("/api/cdkg/reset"); $("#job-cdkg").textContent = "Cleared."; await loadStats(); await loadResults();
 });
+$("#stats-run").addEventListener("change", loadStats);
 $("#q-name").addEventListener("change", loadResults);
 $("#q-country").addEventListener("change", loadResults);
 

@@ -71,6 +71,8 @@ LLM_PROVIDER=mock python -m uvicorn app.main:app --port 8080   # then open the U
 Verified so far: smoke test from a fresh unzip; browser click-through with no JS errors;
 Task 2 end-to-end against a **real local collection-review-tool backend** (seeded queue,
 decisions + removal_reason/skip_note written); LLM path against a stub OpenAI-compatible server.
+Pipeline counts in the UI default to the whole DB; pick a run to see that run's counts
+(clustering itself always spans all runs).
 **Not yet verified:** a real LLM on the Spark, the live Media Cloud API, live crawling of real sites.
 
 ## Known limitations / possible next steps

@@ -118,8 +118,8 @@ def cdkg_job():
 
 
 @app.get("/api/cdkg/stats")
-def cdkg_stats():
-    return queries.stats()
+def cdkg_stats(run_id: int | None = None):
+    return queries.stats(run_id)
 
 
 @app.get("/api/cdkg/events")

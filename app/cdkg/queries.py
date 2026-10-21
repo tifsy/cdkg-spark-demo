@@ -124,16 +124,22 @@ CANONICAL = {
 }
 
 
-def stats() -> dict:
+def stats(run_id: int | None = None) -> dict:
+    """Counts for the whole database, or for one ingest run's articles. Clustering always
+    spans the whole database; with run_id, clusters = clusters containing that run's mentions."""
     with session() as c:
-        one = lambda sql: c.execute(sql).fetchone()[0]
+        arts = "SELECT * FROM articles" + (" WHERE ingest_run_id=:run" if run_id is not None else "")
+        one = lambda sql: c.execute(sql.replace("{arts}", arts), {"run": run_id}).fetchone()[0]
         return {
-            "articles": one("SELECT COUNT(*) FROM articles"),
-            "filter_passed": one("SELECT COUNT(*) FROM articles WHERE filter_passed=1"),
-            "filter_dropped": one("SELECT COUNT(*) FROM articles WHERE filter_passed=0"),
-            "extracted": one("SELECT COUNT(*) FROM articles WHERE extracted_at IS NOT NULL"),
-            "mentions": one("SELECT COUNT(*) FROM event_mentions"),
-            "clusters": one("SELECT COUNT(*) FROM event_clusters"),
+            "run_id": run_id,
+            "articles": one("SELECT COUNT(*) FROM ({arts})"),
+            "filter_passed": one("SELECT COUNT(*) FROM ({arts}) WHERE filter_passed=1"),
+            "filter_dropped": one("SELECT COUNT(*) FROM ({arts}) WHERE filter_passed=0"),
+            "extracted": one("SELECT COUNT(*) FROM ({arts}) WHERE extracted_at IS NOT NULL"),
+            "mentions": one("SELECT COUNT(*) FROM event_mentions m JOIN ({arts}) a ON a.id=m.article_id"),
+            "clusters": one("""SELECT COUNT(DISTINCT m.cluster_id) FROM event_mentions m
+                               JOIN ({arts}) a ON a.id=m.article_id""") if run_id is not None
+                        else one("SELECT COUNT(*) FROM event_clusters"),
             "countries": [r[0] for r in c.execute(
                 """SELECT country_hint FROM articles WHERE country_hint IS NOT NULL
                    UNION SELECT country FROM event_clusters WHERE country IS NOT NULL ORDER BY 1""")],
