@@ -84,6 +84,8 @@ Use Conventional Commits: `<type>(<scope>): <summary>`
 - body (optional, after a blank line): why the change was made, not what
 - breaking changes: add `!` after the type and explain in the body
 - one logical change per commit; don't mix a fix and a feature
+Branch names: `<type>/<short-description>`, e.g. `fix/extraction`, `feat/event-detail-drawer`.
+Same types as commits; lower case; words joined with `-`. Branch from `main`.
 Examples:
   fix(extraction): stop inventing event_start from vague dates
   feat(ui): show cluster detail in a side drawer
