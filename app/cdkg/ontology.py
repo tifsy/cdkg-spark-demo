@@ -144,7 +144,7 @@ Allowed sector values: {", ".join(SECTORS)}
 Return JSON: {{"events": [ {{
   "event_type": one of the allowed values,
   "sector": one of the allowed sectors,
-  "event_start": "YYYY-MM-DD" or null (when the event happened, NOT the report date),
+  "event_start": "YYYY-MM-DD" or null (when the event happened; null unless the article gives a date or a specific day),
   "event_end": "YYYY-MM-DD" or null,
   "country": country name,
   "location_text": most specific place named in the article,

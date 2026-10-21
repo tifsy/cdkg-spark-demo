@@ -69,7 +69,7 @@ def run_filter(threshold: int = 1) -> dict:
 # --------------------------------------------------------------------------- extract
 # Bump when SYSTEM_PROMPT changes; appended to LLM model_version so mentions from
 # different prompts stay distinguishable.
-PROMPT_VERSION = "extract-v1"
+PROMPT_VERSION = "extract-v2"
 
 SYSTEM_PROMPT = f"""You are an information-extraction system for the Crisis–Development Knowledge Graph
 (ontology {ONTOLOGY_VERSION}). Read one news article (any language) and extract every distinct
@@ -79,6 +79,10 @@ Rules:
 - Only report numbers that are explicitly stated in the article. Never infer, sum or average.
 - Never output names of individual people (victims, witnesses, perpetrators). Use categories.
 - Actors are "as reported in source"; do not judge who is responsible.
+- event_start / event_end: only when the article states a date or a specific relative day.
+  Resolve "today", "yesterday", "on Monday" etc. against the Published date given above the
+  article ("today" = the Published date). Vague time phrases ("this week", "recently",
+  "in recent days", "last month") and no time reference at all give null. Never guess a date.
 - One article can contain several events (e.g. an attack AND the displacement it caused).
 - If nothing matches, return {{"events": []}}.
 
@@ -126,6 +130,20 @@ def _int(v):
         return None
 
 
+def _date(v, report_date: str) -> str | None:
+    """ISO date or None: drop dates that don't parse or lie after the report date."""
+    try:
+        d = dt.date.fromisoformat(str(v)[:10])
+    except (TypeError, ValueError):
+        return None
+    try:
+        if d > dt.date.fromisoformat(report_date[:10]):
+            return None
+    except (TypeError, ValueError):
+        pass
+    return d.isoformat()
+
+
 def _normalise(ev: dict, article: dict, model_version: str) -> dict | None:
     etype = ev.get("event_type")
     if etype not in EVENT_TYPES:
@@ -138,10 +156,18 @@ def _normalise(ev: dict, article: dict, model_version: str) -> dict | None:
         geo = geocode(country, text)
     actors = [a for a in (ev.get("actors") or []) if isinstance(a, str)][:5]
     pop = ev.get("population_group")
+    start = _date(ev.get("event_start"), article["publish_date"])
+    end = _date(ev.get("event_end"), article["publish_date"])
+    if start and end and end < start:
+        end = None
+    for k, v in (("event_start", start), ("event_end", end)):
+        if ev.get(k) and not v:
+            log.info("dropped %s=%r for %s (unparseable or after publish date %s)",
+                     k, ev.get(k), article["id"], article["publish_date"])
     return {
         "article_id": article["id"], "event_type": etype, "sector": sector,
-        "report_date": article["publish_date"], "event_start": ev.get("event_start"),
-        "event_end": ev.get("event_end"), "country": geo.get("country", country),
+        "report_date": article["publish_date"], "event_start": start,
+        "event_end": end, "country": geo.get("country", country),
         "admin1": geo["admin1"], "admin2": geo["admin2"],
         "location_text": ev.get("location_text") or geo["admin2"] or geo["admin1"],
         "admin_level": geo["admin_level"], "geo_confidence": geo["geo_confidence"],

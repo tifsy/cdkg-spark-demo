@@ -35,6 +35,8 @@ UNDP, Media Cloud; IGAIP 2026 proposal dated 30 April 2026). It runs on an **NVI
   `sensitive` and their location text/actors are withheld in the API (§5.10).
 - Conflicting figures are kept as ranges, never averaged (§3.8). QA flags: single_source,
   contradiction_*, temporal_span_gt_7d, uncertain_coreference.
+- event_start/event_end only when the article gives a date or a specific day; dates after the
+  publish date or unparseable are dropped in `_normalise`.
 - LLM mentions are labelled `<provider>:<model>+<PROMPT_VERSION>`; bump `PROMPT_VERSION` in
   pipeline.py when the prompt changes. Older rows without the suffix stay valid.
 - Raw input of every run is kept untouched in `data/raw/<date>/*.jsonl` for replay.
