@@ -117,6 +117,7 @@ td.num-cell { text-align: right; }
 .drawer-body > p { margin: 0 0 .5rem; }
 .drawer-place { font-weight: 600; }
 .drawer-body h3 { font-size: .95rem; margin: 1.1rem 0 .4rem; }
+.drawer-figs { margin: 0 0 .6rem; gap: 2rem; }
 .drawer-body dl { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; margin: 0; font-size: .9rem; }
 .drawer-body dt { color: var(--muted); }
 .drawer-body dd { margin: 0; }

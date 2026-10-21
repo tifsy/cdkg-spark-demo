@@ -70,7 +70,7 @@ async function loadQueries() {
 function range(v) { return v ? esc(v) : `<span class="muted">–</span>`; }
 function clusterTable(list) {
   if (!list.length) return `<tr><td class="empty">No event clusters match. Fetch articles in step 1, or choose a different query.</td></tr>`;
-  return `<thead><tr><th>Event</th><th>Place</th><th>Dates</th><th>Sources</th><th>Killed</th><th>Displaced</th><th>Affected</th><th>Confidence</th><th>Checks</th></tr></thead><tbody>` +
+  return `<thead><tr><th>Event</th><th>Place</th><th>Dates</th><th>Sources</th><th>Deaths</th><th>Displaced</th><th>Affected</th><th>Confidence</th><th>Checks</th></tr></thead><tbody>` +
     list.map((e) => `<tr data-id="${esc(e.id)}" tabindex="0">
       <td><span class="type">${esc(lbl(e.event_type))}</span><br><span class="muted">${esc(lbl(e.sector))}</span></td>
       <td>${esc(e.admin2 || e.admin1 || "")}<br><span class="muted">${esc([e.admin2 ? e.admin1 : null, e.country].filter(Boolean).join(", "))}</span></td>
@@ -113,7 +113,7 @@ async function loadResults() {
 const FLAG_LABEL = {
   single_source: "Single source", temporal_span_gt_7d: "Reports span more than 7 days",
   uncertain_coreference: "Uncertain merge of reports", event_date_gt_30d_before_report: "Reported more than 30 days after the event",
-  contradiction_killed: "Conflicting killed figures", contradiction_displaced: "Conflicting displaced figures",
+  contradiction_killed: "Conflicting death figures", contradiction_displaced: "Conflicting displaced figures",
   contradiction_affected: "Conflicting affected figures",
 };
 const flagLabel = (f) => FLAG_LABEL[f] || f.replaceAll("_", " ");
@@ -155,9 +155,11 @@ async function showDetail(tr, { focusRow = false } = {}) {
     <p class="muted">${esc(dates)} · ${esc(lbl(d.sector))}</p>
     ${d.summary ? `<p>${esc(d.summary)}</p>` : ""}
     <h3>Figures</h3>
+    <div class="figures drawer-figs">
+      <div class="fig"><b>${range(d.killed_range)}</b><span>Deaths</span></div>
+      <div class="fig"><b>${range(d.injured_range)}</b><span>Injured</span></div>
+    </div>
     <dl>
-      <dt>Killed</dt><dd>${range(d.killed_range)}</dd>
-      <dt>Injured</dt><dd>${range(d.injured_range)}</dd>
       <dt>Displaced</dt><dd>${range(d.displaced_range)}</dd>
       <dt>Affected</dt><dd>${range(d.affected_range)}</dd>
       <dt>Sources</dt><dd>${esc(d.source_count)} outlet${d.source_count === 1 ? "" : "s"}, ${esc(d.mention_count)} mention${d.mention_count === 1 ? "" : "s"}</dd>
@@ -175,7 +177,7 @@ async function showDetail(tr, { focusRow = false } = {}) {
       <a href="${esc(safeUrl(m.url))}" target="_blank" rel="noopener noreferrer">${esc(m.outlet)}</a>; ${esc(m.publish_date)}; ${esc(m.language)}
       <div>${esc(m.summary)}</div>
       <div class="meta">doc ${esc(m.document_id)}; ${m.event_start ? `event date ${esc(m.event_start)}; ` : ""}${esc(m.location_text || "")} (Admin${esc(m.admin_level)}, geo ${esc(m.geo_confidence)});
-        killed ${esc(m.killed ?? "–")}; displaced ${esc(m.displaced ?? "–")}; affected ${esc(m.affected ?? "–")};
+        deaths ${esc(m.killed ?? "–")}; injured ${esc(m.injured ?? "–")}; displaced ${esc(m.displaced ?? "–")}; affected ${esc(m.affected ?? "–")};
         ${m.actors?.length ? `actors as reported: ${esc(m.actors.join(", "))}; ` : ""}model ${esc(m.model_version)}; conf ${esc(m.confidence)}</div>
     </li>`).join("")}</ol>`;
   $("#detail-body").scrollTop = 0;
