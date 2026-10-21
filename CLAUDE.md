@@ -31,7 +31,8 @@ UNDP, Media Cloud; IGAIP 2026 proposal dated 30 April 2026). It runs on an **NVI
 
 ## Design decisions to preserve
 - Article full text never leaves the Spark through the API (`HIDE_FULLTEXT`, proposal §3.5).
-- No individual names extracted; actors are "as reported"; protection events are flagged
+- No individual names extracted; actors are "as reported" and only parties to the event (not
+  victims, aid workers, sources or hazards); protection events are flagged
   `sensitive` and their location text/actors are withheld in the API (§5.10).
 - Conflicting figures are kept as ranges, never averaged (§3.8). QA flags: single_source,
   contradiction_*, temporal_span_gt_7d, uncertain_coreference.

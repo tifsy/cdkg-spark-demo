@@ -69,7 +69,7 @@ def run_filter(threshold: int = 1) -> dict:
 # --------------------------------------------------------------------------- extract
 # Bump when SYSTEM_PROMPT changes; appended to LLM model_version so mentions from
 # different prompts stay distinguishable.
-PROMPT_VERSION = "extract-v2"
+PROMPT_VERSION = "extract-v3"
 
 SYSTEM_PROMPT = f"""You are an information-extraction system for the Crisis–Development Knowledge Graph
 (ontology {ONTOLOGY_VERSION}). Read one news article (any language) and extract every distinct
@@ -79,6 +79,10 @@ Rules:
 - Only report numbers that are explicitly stated in the article. Never infer, sum or average.
 - Never output names of individual people (victims, witnesses, perpetrators). Use categories.
 - Actors are "as reported in source"; do not judge who is responsible.
+- Actors are only the parties to the event (armed groups, forces, militias, authorities carrying
+  out an action). Never list victims or affected people, aid workers or agencies, health
+  facilities, officials or outlets that report the event, or hazards (floods, cyclones, shelling).
+  If no party is named, return [].
 - event_start / event_end: only when the article states a date or a specific relative day.
   Resolve "today", "yesterday", "on Monday" etc. against the Published date given above the
   article ("today" = the Published date). Vague time phrases ("this week", "recently",

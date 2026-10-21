@@ -153,7 +153,7 @@ Return JSON: {{"events": [ {{
   "population_group": e.g. "IDPs", "children", "civilians", or null,
   "killed": integer or null, "injured": integer or null,
   "displaced": integer or null, "affected": integer or null,
-  "actors": list of party/organisation categories as reported (never individual people's names),
+  "actors": list of parties to the event as reported, e.g. "an armed group" (never victims, aid workers, reporters, hazards or individual people's names),
   "summary": one neutral sentence in English written in your own words,
   "confidence": number 0-1 that this event is real and correctly typed
 }} ]}}"""
