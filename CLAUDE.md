@@ -65,7 +65,7 @@ examples/             sample input files; scripts/ setup, run, tailscale_serve, 
 
 ## How to verify changes
 ```bash
-./scripts/smoke_test.sh                      # offline end-to-end, both tasks (uses temp DATA_DIR)
+./scripts/smoke_test.sh                      # offline end-to-end, both tasks (uses temp DATA_DIR; Linux or Windows venv)
 LLM_PROVIDER=mock python -m uvicorn app.main:app --port 8080   # then open the UI
 python -m app.cli generate --n 30 --seed 42 && python -m app.cli score   # pairwise clustering P/R
 ```

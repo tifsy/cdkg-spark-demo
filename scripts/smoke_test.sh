@@ -2,7 +2,7 @@
 # Offline end-to-end check of both tasks (no GPU, no API keys, no internet).
 set -euo pipefail
 cd "$(dirname "$0")/.."
-[ -d .venv ] && . .venv/bin/activate
+if [ -f .venv/bin/activate ]; then . .venv/bin/activate; elif [ -f .venv/Scripts/activate ]; then . .venv/Scripts/activate; fi   # Linux / Windows venv
 export DATA_DIR=$(mktemp -d) LLM_PROVIDER=mock CRT_MODE=mock INSPECTOR_MODE=fixture
 summary="import json,sys; d=json.load(sys.stdin); i=d['ingest']; print('  %-7s fetched=%-4s filter=%s clusters=%s' % (i['source'], i['fetched'], d['filter'], d['cluster']['clusters']))"
 echo "Task 1"
