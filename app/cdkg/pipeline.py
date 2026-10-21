@@ -70,6 +70,7 @@ def run_filter(threshold: int = 1) -> dict:
 # Bump when SYSTEM_PROMPT changes; appended to LLM model_version so mentions from
 # different prompts stay distinguishable.
 PROMPT_VERSION = "extract-v3"
+LATE_REPORT_DAYS = 30   # event_start this long before the report date -> QA flag on the cluster
 
 SYSTEM_PROMPT = f"""You are an information-extraction system for the Crisis–Development Knowledge Graph
 (ontology {ONTOLOGY_VERSION}). Read one news article (any language) and extract every distinct
@@ -284,6 +285,10 @@ def run_cluster(window_days: int = 2) -> dict:
                 flags.append("single_source")
             if (cl["last"] - cl["first"]).days > 7:
                 flags.append("temporal_span_gt_7d")
+            if any(m["event_start"] and (dt.date.fromisoformat(m["report_date"][:10])
+                                         - dt.date.fromisoformat(m["event_start"][:10])).days > LATE_REPORT_DAYS
+                   for m in mem):
+                flags.append(f"event_date_gt_{LATE_REPORT_DAYS}d_before_report")
             for k in ("killed", "displaced", "affected"):
                 vals = [m[k] for m in mem if m[k]]
                 if vals and max(vals) > 10 * min(vals):
