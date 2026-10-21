@@ -67,6 +67,10 @@ def run_filter(threshold: int = 1) -> dict:
 
 
 # --------------------------------------------------------------------------- extract
+# Bump when SYSTEM_PROMPT changes; appended to LLM model_version so mentions from
+# different prompts stay distinguishable.
+PROMPT_VERSION = "extract-v1"
+
 SYSTEM_PROMPT = f"""You are an information-extraction system for the Crisis–Development Knowledge Graph
 (ontology {ONTOLOGY_VERSION}). Read one news article (any language) and extract every distinct
 real-world crisis event that matches the allowed event types.
@@ -165,6 +169,8 @@ def run_extract(limit: int = 200) -> dict:
                 f"Reference country: {a['country_hint']}\nTitle: {a['title']}\n\n{body}")
         try:
             out, mv = llm.chat_json(SYSTEM_PROMPT, user, fallback=lambda a=a: _heuristic_extract(a))
+            if not mv.startswith("heuristic"):
+                mv = f"{mv}+{PROMPT_VERSION}"
             versions.add(mv)
             evs = [e for e in (_normalise(ev, a, mv) for ev in out.get("events", [])) if e]
             with session() as c:

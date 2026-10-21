@@ -35,6 +35,8 @@ UNDP, Media Cloud; IGAIP 2026 proposal dated 30 April 2026). It runs on an **NVI
   `sensitive` and their location text/actors are withheld in the API (§5.10).
 - Conflicting figures are kept as ranges, never averaged (§3.8). QA flags: single_source,
   contradiction_*, temporal_span_gt_7d, uncertain_coreference.
+- LLM mentions are labelled `<provider>:<model>+<PROMPT_VERSION>`; bump `PROMPT_VERSION` in
+  pipeline.py when the prompt changes. Older rows without the suffix stay valid.
 - Raw input of every run is kept untouched in `data/raw/<date>/*.jsonl` for replay.
 - Task 2: the AI never calls `decide`. Suggestions are stored with status `pending`; only
   `agent.confirm()` (human) pushes. Confidence < `REVIEW_MIN_CONFIDENCE` (0.70) → proposed skip.
