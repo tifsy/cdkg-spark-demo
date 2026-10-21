@@ -67,7 +67,9 @@ examples/             sample input files; scripts/ setup, run, tailscale_serve, 
 ```bash
 ./scripts/smoke_test.sh                      # offline end-to-end, both tasks (uses temp DATA_DIR)
 LLM_PROVIDER=mock python -m uvicorn app.main:app --port 8080   # then open the UI
+python -m app.cli generate --n 30 --seed 42 && python -m app.cli score   # pairwise clustering P/R
 ```
+The generator writes a hidden `true_event_id` into the raw JSONL only; `score` reads it from there.
 Verified so far: smoke test from a fresh unzip; browser click-through with no JS errors;
 Task 2 end-to-end against a **real local collection-review-tool backend** (seeded queue,
 decisions + removal_reason/skip_note written); LLM path against a stub OpenAI-compatible server.
