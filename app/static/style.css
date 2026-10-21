@@ -182,6 +182,27 @@ kbd { font: inherit; font-size: .78rem; border: 1px solid var(--line); border-bo
   #tab-cdkg { grid-template-columns: 1fr; }
   .sug { grid-template-columns: 1fr; }
 }
+/* app shell: the page is exactly the viewport; header and tabs keep their height, the active tab
+   fills the rest and its panels scroll on their own. Below 900px the page scrolls normally. */
+@media (min-width: 901px) {
+  html, body { height: 100vh; height: 100dvh; }
+  body { display: flex; flex-direction: column; overflow: hidden; }
+  .top, .tabs { flex: none; }
+  .tab { flex: 1; min-height: 0; padding-bottom: 1rem; }
+
+  #tab-cdkg { grid-template-rows: minmax(0, 1fr); align-items: stretch; }
+  .rail { min-height: 0; overflow-y: auto; padding-right: .5rem; }
+  .results { display: flex; flex-direction: column; min-height: 0; }
+  .results-head { flex: none; }
+  .table-wrap { flex: 0 1 auto; min-height: 0; overflow: auto; scroll-padding-top: 2.4rem; }
+  th { position: sticky; top: 0; z-index: 1; box-shadow: inset 0 -1px 0 var(--line); }
+
+  /* the list scrolls on its own; on very short windows (high zoom) it keeps a usable height
+     and the tab scrolls instead, so nothing is cut off */
+  #tab-review { display: flex; flex-direction: column; overflow-y: auto; }
+  #tab-review > * { flex: none; }
+  #tab-review > .suggestions { flex: 0 1 auto; min-height: 12rem; overflow-y: auto; }
+}
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
 /* fixes after visual check */
