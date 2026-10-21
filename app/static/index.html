@@ -104,8 +104,14 @@
       <span id="res-count" class="muted"></span>
     </div>
     <div class="table-wrap"><table id="res-table"></table></div>
-    <aside id="detail" class="detail" hidden></aside>
   </section>
+  <aside id="detail" class="drawer" role="dialog" aria-labelledby="detail-title" tabindex="-1">
+    <div class="drawer-head">
+      <h2 id="detail-title"></h2>
+      <button type="button" class="drawer-close" id="detail-close" aria-label="Close event details">×</button>
+    </div>
+    <div id="detail-body" class="drawer-body"></div>
+  </aside>
 </main>
 
 <!-- ========================= Task 2 ========================= -->

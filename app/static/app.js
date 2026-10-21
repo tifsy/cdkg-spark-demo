@@ -44,7 +44,7 @@ async function loadStatus() {
 $$(".tabs button").forEach((b) => b.addEventListener("click", () => {
   $$(".tabs button").forEach((x) => x.setAttribute("aria-selected", x === b));
   $$(".tab").forEach((t) => (t.hidden = t.id !== `tab-${b.dataset.tab}`));
-  if (b.dataset.tab === "review") initReview();
+  if (b.dataset.tab === "review") { closeDetail(false); initReview(); }
 }));
 
 /* ================= Task 1 ================= */
@@ -71,7 +71,7 @@ function range(v) { return v ? esc(v) : `<span class="muted">–</span>`; }
 function clusterTable(list) {
   if (!list.length) return `<tr><td class="empty">No event clusters match. Fetch articles in step 1, or choose a different query.</td></tr>`;
   return `<thead><tr><th>Event</th><th>Place</th><th>Dates</th><th>Sources</th><th>Killed</th><th>Displaced</th><th>Affected</th><th>Confidence</th><th>Checks</th></tr></thead><tbody>` +
-    list.map((e) => `<tr data-id="${e.id}">
+    list.map((e) => `<tr data-id="${esc(e.id)}" tabindex="0">
       <td><span class="type">${esc(lbl(e.event_type))}</span><br><span class="muted">${esc(lbl(e.sector))}</span></td>
       <td>${esc(e.admin2 || e.admin1 || "")}<br><span class="muted">${esc([e.admin2 ? e.admin1 : null, e.country].filter(Boolean).join(", "))}</span></td>
       <td>${esc(e.first_date)}${e.last_date !== e.first_date ? `<br><span class="muted">to ${esc(e.last_date)}</span>` : ""}</td>
@@ -90,7 +90,7 @@ function genericTable(list) {
 
 async function loadResults() {
   const name = $("#q-name").value, country = $("#q-country").value;
-  $("#detail").hidden = true;
+  closeDetail(false);
   let list, title = "Event clusters";
   if (name) {
     if (!country) { $("#res-table").innerHTML = `<tr><td class="empty">Choose a country to run this query.</td></tr>`; $("#res-count").textContent = ""; return; }
@@ -103,32 +103,107 @@ async function loadResults() {
   $("#res-count").textContent = `${list.length} row${list.length === 1 ? "" : "s"}`;
   const isClusters = list.length && "linkage_score" in list[0];
   $("#res-table").innerHTML = isClusters || !list.length && !name ? clusterTable(list) : genericTable(list);
-  $$("#res-table tbody tr[data-id]").forEach((tr) => tr.addEventListener("click", () => showDetail(tr)));
+  $$("#res-table tbody tr[data-id]").forEach((tr) => {
+    tr.addEventListener("click", () => showDetail(tr));
+    tr.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showDetail(tr); } });
+  });
 }
 
-async function showDetail(tr) {
+/* ---------------- event detail drawer ---------------- */
+const FLAG_LABEL = {
+  single_source: "Single source", temporal_span_gt_7d: "Reports span more than 7 days",
+  uncertain_coreference: "Uncertain merge of reports", event_date_gt_30d_before_report: "Reported more than 30 days after the event",
+  contradiction_killed: "Conflicting killed figures", contradiction_displaced: "Conflicting displaced figures",
+  contradiction_affected: "Conflicting affected figures",
+};
+const flagLabel = (f) => FLAG_LABEL[f] || f.replaceAll("_", " ");
+const safeUrl = (u) => (/^https?:\/\//i.test(u || "") ? u : "#");
+let detailReq = 0;
+
+const detailOpen = () => $("#detail").classList.contains("open");
+const cdkgRows = () => $$("#res-table tbody tr[data-id]");
+
+async function showDetail(tr, { focusRow = false } = {}) {
+  const drawer = $("#detail"), wasOpen = detailOpen();
   $$("#res-table tr.sel").forEach((x) => x.classList.remove("sel"));
   tr.classList.add("sel");
-  const d = await api(`/api/cdkg/events/${tr.dataset.id}`);
-  const el = $("#detail");
-  el.hidden = false;
-  el.innerHTML = `<h3>${esc(lbl(d.event_type))} in ${esc(d.admin2 || d.admin1 || d.country)}</h3>
-    <p class="muted">${esc(d.summary)}</p>
+  tr.scrollIntoView({ block: "nearest" });
+  if (focusRow) tr.focus({ preventScroll: true });
+  const req = ++detailReq;
+  if (!wasOpen) {
+    $("#detail-title").textContent = "Loading…";
+    $("#detail-body").innerHTML = "";
+  }
+  drawer.classList.add("open");
+  document.body.classList.add("drawer-open");
+  if (!wasOpen) drawer.focus();
+  let d;
+  try { d = await api(`/api/cdkg/events/${encodeURIComponent(tr.dataset.id)}`); }
+  catch (e) {
+    if (req !== detailReq) return;
+    $("#detail-title").textContent = "Could not load this event";
+    $("#detail-body").innerHTML = `<p class="muted">${esc(e.message)}</p>`;
+    return;
+  }
+  if (req !== detailReq || !detailOpen()) return;   // a newer row was chosen, or the drawer was closed
+  const place = [d.admin2, d.admin1, d.country].filter(Boolean);
+  const dates = d.last_date && d.last_date !== d.first_date ? `${d.first_date} to ${d.last_date}` : d.first_date;
+  const flags = d.qa_flags || [];
+  $("#detail-title").textContent = lbl(d.event_type);
+  $("#detail-body").innerHTML = `
+    <p class="drawer-place">${esc(place.join(", "))}</p>
+    <p class="muted">${esc(dates)} · ${esc(lbl(d.sector))}</p>
+    ${d.summary ? `<p>${esc(d.summary)}</p>` : ""}
+    <h3>Figures</h3>
     <dl>
-      <dt>Linkage score</dt><dd>${d.linkage_score} ${d.mention_count > 1 ? `(${d.mention_count} mentions merged)` : ""}</dd>
-      <dt>Reported injured</dt><dd>${range(d.injured_range)}</dd>
-      <dt>Contradictions</dt><dd>All reported values are kept as a range, never averaged.</dd>
-      ${d.sensitive ? `<dt>Protection</dt><dd>Location detail and actors are withheld for this event type.</dd>` : ""}
+      <dt>Killed</dt><dd>${range(d.killed_range)}</dd>
+      <dt>Injured</dt><dd>${range(d.injured_range)}</dd>
+      <dt>Displaced</dt><dd>${range(d.displaced_range)}</dd>
+      <dt>Affected</dt><dd>${range(d.affected_range)}</dd>
+      <dt>Sources</dt><dd>${esc(d.source_count)} outlet${d.source_count === 1 ? "" : "s"}, ${esc(d.mention_count)} mention${d.mention_count === 1 ? "" : "s"}</dd>
+      <dt>Linkage score</dt><dd>${esc(d.linkage_score)}</dd>
+      <dt>Confidence</dt><dd>${esc(d.confidence)}</dd>
     </dl>
+    <p class="hint">Differing figures are kept as a range, never averaged.</p>
+    <h3>Quality checks</h3>
+    ${flags.length || d.sensitive
+      ? `<ul class="drawer-flags">${flags.map((f) => `<li><span class="flag">${esc(flagLabel(f))}</span></li>`).join("")}${
+          d.sensitive ? `<li><span class="flag sensitive">Sensitive</span> Location detail and actors are withheld for this event type.</li>` : ""}</ul>`
+      : `<p class="muted">No flags.</p>`}
     <h3>Provenance</h3>
     <ol class="mentions">${d.mentions.map((m) => `<li>
-      <a href="${esc(m.url || "#")}" target="_blank" rel="noopener noreferrer">${esc(m.outlet)}</a>; ${esc(m.publish_date)}; ${esc(m.language)}
+      <a href="${esc(safeUrl(m.url))}" target="_blank" rel="noopener noreferrer">${esc(m.outlet)}</a>; ${esc(m.publish_date)}; ${esc(m.language)}
       <div>${esc(m.summary)}</div>
-      <div class="meta">doc ${esc(m.document_id)}; ${esc(m.location_text || "")} (Admin${m.admin_level}, geo ${m.geo_confidence});
-        killed ${m.killed ?? "–"}; displaced ${m.displaced ?? "–"}; affected ${m.affected ?? "–"};
-        ${m.actors?.length ? `actors as reported: ${esc(m.actors.join(", "))}; ` : ""}model ${esc(m.model_version)}; conf ${m.confidence}</div>
+      <div class="meta">doc ${esc(m.document_id)}; ${m.event_start ? `event date ${esc(m.event_start)}; ` : ""}${esc(m.location_text || "")} (Admin${esc(m.admin_level)}, geo ${esc(m.geo_confidence)});
+        killed ${esc(m.killed ?? "–")}; displaced ${esc(m.displaced ?? "–")}; affected ${esc(m.affected ?? "–")};
+        ${m.actors?.length ? `actors as reported: ${esc(m.actors.join(", "))}; ` : ""}model ${esc(m.model_version)}; conf ${esc(m.confidence)}</div>
     </li>`).join("")}</ol>`;
+  $("#detail-body").scrollTop = 0;
 }
+
+function closeDetail(restoreFocus = true) {
+  if (!detailOpen()) return;
+  detailReq++;
+  $("#detail").classList.remove("open");
+  document.body.classList.remove("drawer-open");
+  const sel = $("#res-table tr.sel");
+  sel?.classList.remove("sel");
+  if (restoreFocus) sel?.focus();
+}
+
+$("#detail-close").addEventListener("click", () => closeDetail());
+document.addEventListener("click", (e) => {   // click outside closes; clicks on other rows swap the content
+  if (detailOpen() && !$("#detail").contains(e.target) && !e.target.closest("#res-table tr[data-id]")) closeDetail(false);
+});
+document.addEventListener("keydown", (e) => {
+  if (!detailOpen() || $("#tab-cdkg").hidden) return;
+  if (e.key === "Escape") { e.preventDefault(); closeDetail(); return; }
+  if (!["ArrowUp", "ArrowDown"].includes(e.key) || ["INPUT", "SELECT", "TEXTAREA"].includes(e.target.tagName)) return;
+  const rows = cdkgRows(), i = rows.findIndex((r) => r.classList.contains("sel"));
+  const next = rows[i + (e.key === "ArrowDown" ? 1 : -1)];
+  e.preventDefault();
+  if (next) showDetail(next, { focusRow: e.target.matches?.("#res-table tr[data-id]") });
+});
 
 async function pollCdkg() {
   const j = await api("/api/cdkg/job");

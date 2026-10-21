@@ -90,6 +90,7 @@ th, td { text-align: left; padding: .55rem .7rem; border-bottom: 1px solid var(-
 th { font-weight: 600; color: var(--muted); font-size: .8rem; background: #F8F9FA; white-space: nowrap; }
 tbody tr { cursor: pointer; }
 tbody tr:hover, tbody tr.sel { background: #EEF3F8; }
+tbody tr.sel { box-shadow: inset 3px 0 0 var(--blue); }
 td.num-cell { text-align: right; }
 .type { font-weight: 600; }
 .flag { display: inline-block; font-size: .72rem; padding: 0 .4rem; border-radius: var(--radius-s);
@@ -99,11 +100,36 @@ td.num-cell { text-align: right; }
 .conf i { display: block; height: 100%; background: var(--blue); border-radius: 2px; }
 .empty { padding: 2rem; text-align: center; color: var(--muted); }
 
-.detail { margin-top: 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-m); padding: 1rem 1.2rem; }
-.detail h3 { font-size: 1.05rem; margin-bottom: .3rem; }
-.detail dl { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; margin: .75rem 0; font-size: .9rem; }
-.detail dt { color: var(--muted); }
-.detail dd { margin: 0; }
+/* event detail drawer: slides in from the right, the table stays usable on the left */
+.drawer { position: fixed; top: 0; right: 0; z-index: 20; width: 480px; max-width: 100vw; height: 100vh; height: 100dvh;
+          display: flex; flex-direction: column; background: var(--surface); border-left: 1px solid var(--line);
+          box-shadow: -8px 0 24px rgba(24, 35, 46, .12);
+          transform: translateX(100%); visibility: hidden; transition: transform .2s ease, visibility 0s linear .2s; }
+.drawer.open { transform: none; visibility: visible; transition: transform .2s ease; }
+.drawer:focus { outline: none; }
+.drawer:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem;
+               padding: 1rem 1.2rem .6rem; border-bottom: 1px solid var(--line); }
+.drawer-head h2 { font-size: 1.2rem; }
+.drawer-close { padding: 0 .55rem; font-size: 1.4rem; line-height: 1.6; background: transparent; border-color: transparent; }
+.drawer-close:hover { border-color: var(--line); }
+.drawer-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: .8rem 1.2rem 1.5rem; font-size: .92rem; }
+.drawer-body > p { margin: 0 0 .5rem; }
+.drawer-place { font-weight: 600; }
+.drawer-body h3 { font-size: .95rem; margin: 1.1rem 0 .4rem; }
+.drawer-body dl { display: grid; grid-template-columns: max-content 1fr; gap: .25rem 1rem; margin: 0; font-size: .9rem; }
+.drawer-body dt { color: var(--muted); }
+.drawer-body dd { margin: 0; }
+.drawer-body .hint { margin: .4rem 0 0; font-size: .82rem; }
+.drawer-flags { list-style: none; margin: 0; padding: 0; font-size: .85rem; }
+.drawer-flags li { margin-bottom: .25rem; }
+.drawer-flags .flag { font-size: .78rem; }
+.drawer-body .mentions a { color: var(--blue); }
+body.drawer-open #tab-cdkg { padding-right: calc(480px + 1.5rem); }
+@media (max-width: 700px) {
+  .drawer { width: 100vw; border-left: 0; }
+  body.drawer-open #tab-cdkg { padding-right: clamp(1rem, 3vw, 2.5rem); }
+}
 .mentions { list-style: none; padding: 0; margin: 0; }
 .mentions li { border-top: 1px solid var(--line); padding: .6rem 0; font-size: .88rem; }
 .mentions .meta { color: var(--muted); font-size: .8rem; }
